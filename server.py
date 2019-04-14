@@ -39,7 +39,9 @@ def tcp_link(sock, addr):
     request = sock.recv(1024)
     http_req = HttpRequest()
     http_req.passRequest(request)
-    sock.send(http_req.getResponse().encode('utf-8'))
+    # sock.send(http_req.getResponse().encode('utf-8'))
+    sock.send(http_req.getResponse())
+
     sock.close()
 
 
