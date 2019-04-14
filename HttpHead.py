@@ -122,6 +122,7 @@ class HttpRequest(object):
 
     # 只提供制定类型的静态文件
     def staticRequest(self, path):
+
         # print path
         if not os.path.isfile(path):
             f = open(HttpRequest.NotFoundHtml, 'r')
@@ -189,8 +190,8 @@ class HttpRequest(object):
         else:
             # 获取文件名，并且将/替换成.
 
-            print("path:%s"%path)
             file_path = path.split('.', 1)[0].replace('/', '.')
+
             self.response_line = ErrorCode.OK
             m = __import__(file_path)
             m.main.SESSION = self.processSession()

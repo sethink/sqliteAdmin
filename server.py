@@ -5,6 +5,8 @@ import Queue
 from HttpHead import HttpRequest
 
 
+
+
 # 每个任务线程
 class WorkThread(threading.Thread):
     def __init__(self, work_queue):
@@ -43,10 +45,10 @@ def tcp_link(sock, addr):
 
 def start_server():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('127.0.0.1', 9999))
+    s.bind(('0.0.0.0', 9999))
     s.listen(10)
     thread_pool = ThreadPoolManger(5)
-    print('listen in %s:%d' % ('127.0.0.1', 9999))
+    print('listen in %s:%d' % ('0.0.0.0', 9999))
     while True:
         sock, addr = s.accept()
         thread_pool.add_work(tcp_link, *(sock, addr))
