@@ -5,12 +5,10 @@ import Queue
 from HttpHead import HttpRequest
 
 
-
-
 # 每个任务线程
 class WorkThread(threading.Thread):
     def __init__(self, work_queue):
-        super(WorkThread,self).__init__()
+        super(WorkThread, self).__init__()
         self.work_queue = work_queue
         self.daemon = True
 
@@ -26,7 +24,7 @@ class ThreadPoolManger():
     def __init__(self, thread_number):
         self.thread_number = thread_number
         self.work_queue = Queue.Queue()
-        for i in range(self.thread_number):     # 生成一些线程来执行任务
+        for i in range(self.thread_number):  # 生成一些线程来执行任务
             thread = WorkThread(self.work_queue)
             thread.start()
 

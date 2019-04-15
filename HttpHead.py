@@ -13,8 +13,9 @@ class ErrorCode(object):
 def dict2str(d):
     s = ''
     for i in d:
-        s = s + i+': '+d[i]+'\r\n'
+        s = s + i + ': ' + d[i] + '\r\n'
     return s
+
 
 class Session(object):
     def __init__(self):
@@ -53,7 +54,7 @@ class Session(object):
 
 class HttpRequest(object):
     RootDir = 'root'
-    NotFoundHtml = RootDir+'/404.html'
+    NotFoundHtml = RootDir + '/404.html'
     CookieDir = 'root/cookie/'
 
     def __init__(self):
@@ -90,7 +91,7 @@ class HttpRequest(object):
         if len(request.split('\r\n', 1)) != 2:
             return
         request_line, body = request.split('\r\n', 1)
-        request_head = body.split('\r\n\r\n', 1)[0]     # 头部信息
+        request_head = body.split('\r\n\r\n', 1)[0]  # 头部信息
         self.passRequestLine(request_line)
         self.passRequestHead(request_head)
 
@@ -100,15 +101,15 @@ class HttpRequest(object):
         if self.method == 'POST':
             self.request_data = {}
             request_body = body.split('\r\n\r\n', 1)[1]
-            parameters = request_body.split('&')   # 每一行是一个字段
+            parameters = request_body.split('&')  # 每一行是一个字段
             for i in parameters:
-                if i=='':
+                if i == '':
                     continue
                 key, val = i.split('=', 1)
                 self.request_data[key] = val
             self.dynamicRequest(HttpRequest.RootDir + self.url)
         if self.method == 'GET':
-            if self.url.find('?') != -1:        # 含有参数的get
+            if self.url.find('?') != -1:  # 含有参数的get
                 self.request_data = {}
                 req = self.url.split('?', 1)[1]
                 s_url = self.url.split('?', 1)[0]
@@ -127,7 +128,8 @@ class HttpRequest(object):
         if not os.path.isfile(path):
             f = open(HttpRequest.NotFoundHtml, 'r')
             self.response_line = ErrorCode.NOT_FOUND
-            self.response_head['Content-Type'] = 'text/html'
+            # self.response_head['Content-Type'] = 'text/html'
+            self.response_head['Content-Type'] = self.checkHeader(path)
             self.response_body = f.read()
         else:
             extension_name = os.path.splitext(path)[1]  # 扩展名
@@ -135,12 +137,22 @@ class HttpRequest(object):
             if extension_name == '.png':
                 f = open(path, 'rb')
                 self.response_line = ErrorCode.OK
-                self.response_head['Content-Type'] = 'text/png'
+                # self.response_head['Content-Type'] = 'text/png'
+                self.response_head['Content-Type'] = self.checkHeader(path)
                 self.response_body = f.read()
             elif extension_name in extension_set:
                 f = open(path, 'r')
                 self.response_line = ErrorCode.OK
-                self.response_head['Content-Type'] = 'text/html'
+                # self.response_head['Content-Type'] = 'text/html'
+                self.response_head['Content-Type'] = self.checkHeader(path)
+
+                # if extension_name == '.css':
+                #     self.response_head['Content-Type'] = 'text/css'
+                # elif extension_name == '.html':
+                #     self.response_head['Content-Type'] = 'text/html'
+                # elif extension_name == '.js':
+                #     self.response_head['Content-Type'] = 'application/javascript'
+
                 self.response_body = f.read()
             elif extension_name == '.py':
                 self.dynamicRequest(path)
@@ -148,7 +160,8 @@ class HttpRequest(object):
             else:
                 f = open(HttpRequest.NotFoundHtml, 'r')
                 self.response_line = ErrorCode.NOT_FOUND
-                self.response_head['Content-Type'] = 'text/html'
+                # self.response_head['Content-Type'] = 'text/html'
+                self.response_head['Content-Type'] = self.checkHeader(path)
                 self.response_body = f.read()
 
     def processSession(self):
@@ -167,11 +180,10 @@ class HttpRequest(object):
             # 当前cookie不存在，自动创建
             else:
                 self.Cookie = self.generateCookie()
-                cookie_file = self.CookieDir+self.Cookie
+                cookie_file = self.CookieDir + self.Cookie
                 self.session.cook_file = cookie_file
                 self.session.write2XML()
         return self.session
-
 
     def generateCookie(self):
         import time, hashlib
@@ -181,11 +193,16 @@ class HttpRequest(object):
         return cookie
 
     def dynamicRequest(self, path):
+
         # 如果找不到或者后缀名不是py则输出404
         if not os.path.isfile(path) or os.path.splitext(path)[1] != '.py':
+
             f = open(HttpRequest.NotFoundHtml, 'r')
-            self.response_line = ErrorCode.NOT_FOUND
-            self.response_head['Content-Type'] = 'text/html'
+            # self.response_line = ErrorCode.NOT_FOUND
+            self.response_line = ErrorCode.OK
+
+            # self.response_head['Content-Type'] = 'text/html'
+            self.response_head['Content-Type'] = self.checkHeader(path)
             self.response_body = f.read()
         else:
             # 获取文件名，并且将/替换成.
@@ -193,6 +210,7 @@ class HttpRequest(object):
             file_path = path.split('.', 1)[0].replace('/', '.')
 
             self.response_line = ErrorCode.OK
+
             m = __import__(file_path)
             m.main.SESSION = self.processSession()
             if self.method == 'POST':
@@ -202,8 +220,31 @@ class HttpRequest(object):
                 m.main.POST = None
                 m.main.GET = self.request_data
             self.response_body = m.main.app()
-            self.response_head['Content-Type'] = 'text/html'
+            # self.response_head['Content-Type'] = 'text/html'
+            self.response_head['Content-Type'] = self.checkHeader(path)
             self.response_head['Set-Cookie'] = self.Cookie
 
     def getResponse(self):
-        return self.response_line+dict2str(self.response_head)+'\r\n'+self.response_body
+        return self.response_line + dict2str(self.response_head) + '\r\n' + self.response_body
+
+    def checkHeader(self,path):
+        extension_name = os.path.splitext(path)[1]
+        head = ''
+        if extension_name == '.html':
+            head = 'text/html'
+        elif extension_name == '.py':
+            head = 'text/html'
+        elif extension_name == '.css':
+            head = 'text/css'
+        elif extension_name == '.js':
+            head = 'application/javascript'
+        elif extension_name == '.jpg':
+            head = 'image/jpeg'
+        elif extension_name == '.png':
+            head = 'image/png'
+        elif extension_name == '.gif':
+            head = 'image/gif'
+        else:
+            head = 'text/html'
+
+        return head
