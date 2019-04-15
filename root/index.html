@@ -16,43 +16,68 @@
 
 </head>
 <body class="login-bg">
-    
+
     <div class="login layui-anim layui-anim-up">
-        <div class="message">x-admin2.0-管理登录</div>
+        <div class="message" style="font-size:2em;">sqlite 管理工具</div>
         <div id="darkbannerwrap"></div>
-        
-        <form method="post" class="layui-form" >
-            <input name="username" placeholder="用户名"  type="text" lay-verify="required" class="layui-input" >
-            <hr class="hr15">
-            <input name="password" lay-verify="required" placeholder="密码"  type="password" class="layui-input">
-            <hr class="hr15">
-            <input value="登录" lay-submit lay-filter="login" style="width:100%;" type="submit">
+
+        <div id="redirect" style="display:none;text-align:center;">
+            <div id="number" style="font-size:10em;"></div>
+            <div style="font-size: 2em;">正在跳转...</div>
+            <div style="margin-top: 10px;">
+                <input onclick="cancel()" value="取 消" style="width:100%;" type="button">
+            </div>
+        </div>
+
+        <form id="form" style="display:none;margin-top:20px;" method="post" class="layui-form" >
+            <input id="db_url" ="db_url" placeholder="sqlite 路径（绝对路径）"  type="text" class="layui-input" >
+            <hr class="hr20">
+            <input value="打 开" onclick="do_submit()" style="width:100%;margin-top:50px;" type="button">
             <hr class="hr20" >
         </form>
     </div>
 
     <script>
-        $(function  () {
-            layui.use('form', function(){
-              var form = layui.form;
-              // layer.msg('玩命卖萌中', function(){
-              //   //关闭后的操作
-              //   });
-              //监听提交
-              form.on('submit(login)', function(data){
-                // alert(888)
-                layer.msg(JSON.stringify(data.field),function(){
-                    location.href='index.html'
-                });
-                return false;
-              });
-            });
-        })
+        $(function () {
+            var db_url = localStorage.getItem('db_url');
+            var max_number = 5;
+            if(!db_url){
+                $('#form').css('display','none');
+                $('#redirect').css('display','block');
+                $('#number').html(max_number);
+                var interVal = setInterval(function(){
+                    if(max_number>0){
+                        $('#number').html(--max_number);
+                    }else{
+                        clearInterval(interVal);
 
+                    }
+                },1000);
+            }else{
+                $('#redirect').css('display','none');
+                $('#form').css('display','block');
+            }
+        });
+
+        function cancel(){
+            var db_url = localStorage.getItem('db_url');
+            if(db_url){
+                $('#db_url').val(db_url);
+            }
+            $('#redirect').css('display','none');
+            $('#form').css('display','block');
+        }
         
+        function do_submit(){
+            var db_url = $('#db_url').val();
+            localStorage.setItem('db_url',db_url);
+            $('#form').css('display','none');
+            $('#redirect').css('display','block');
+            $('#number').html(max_number);
+        }
     </script>
 
-    
+
     <!-- 底部结束 -->
 </body>
 </html>
