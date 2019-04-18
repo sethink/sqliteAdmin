@@ -1,6 +1,8 @@
 # -*- coding:utf-8 -*-
 import os
 import xml.dom.minidom
+import importlib
+
 
 
 # 返回码
@@ -194,6 +196,7 @@ class HttpRequest(object):
 
     def dynamicRequest(self, path):
 
+
         # 如果找不到或者后缀名不是py则输出404
         if not os.path.isfile(path) or os.path.splitext(path)[1] != '.py':
 
@@ -207,20 +210,28 @@ class HttpRequest(object):
         else:
             # 获取文件名，并且将/替换成.
 
+            print('path:%s'%path)
             file_path = path.split('.', 1)[0].replace('/', '.')
 
-            self.response_line = ErrorCode.OK
+            # real_path = file_path.split('.',1)[1]
 
-            m = __import__(file_path)
-            m.main.SESSION = self.processSession()
+            self.response_line = ErrorCode.OK
+            print('file_path:%s' % file_path)
+
+            m = importlib.import_module(file_path)
+
+            print('module:%s' % m)
+
+
+            m._SESSION = self.processSession()
+
             if self.method == 'POST':
-                m.main.POST = self.request_data
-                m.main.GET = None
+                m._POST = self.request_data
+                m._GET = None
             else:
-                m.main.POST = None
-                m.main.GET = self.request_data
-            self.response_body = m.main.app()
-            # self.response_head['Content-Type'] = 'text/html'
+                m._POST = None
+                m._GET = self.request_data
+            self.response_body = m.app()
             self.response_head['Content-Type'] = self.checkHeader(path)
             self.response_head['Set-Cookie'] = self.Cookie
 
@@ -229,7 +240,6 @@ class HttpRequest(object):
 
     def checkHeader(self,path):
         extension_name = os.path.splitext(path)[1]
-        head = ''
         if extension_name == '.html':
             head = 'text/html'
         elif extension_name == '.py':
@@ -246,5 +256,4 @@ class HttpRequest(object):
             head = 'image/gif'
         else:
             head = 'text/html'
-
         return head
