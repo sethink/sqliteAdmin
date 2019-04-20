@@ -2,6 +2,7 @@
 import socket
 import threading
 import Queue
+import importlib
 from HttpHead import HttpRequest
 
 
@@ -54,22 +55,23 @@ def start_server():
         sock, addr = s.accept()
         thread_pool.add_work(tcp_link, *(sock, addr))
 
-
+#
 # def test1():
-#     # 实现功能：执行check_db_exists模块里的test()函数
-#     # 因为check_db_exists模块不确定，也有可能会变成别的模块
-#     m = __import__('root.check_db_exists')
+#     file_path = 'root.CheckDbExists'
+#     file_name = 'CheckDbExists'
 #
-#     print('module:%s'%m)
-#     print('dir(m):%s'%dir(m))
+#     m = __import__(file_path,fromlist=[file_name])
+#     n = getattr(m,file_name)
 #
-#     # 成功（这样就限制了只能使用制定模块）
-#     m.check_db_exists.test()
 #
-#     # 会报错
-#     m.test()
-#
+#     print(m)
+#     print(dir(m))
+#     print(n)
+#     n().test()
+
+
 
 if __name__ == '__main__':
     start_server()
+    # test1()
     pass

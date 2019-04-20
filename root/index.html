@@ -79,7 +79,7 @@
                         clearInterval(interVal);
                         // location.href = "";
                         $.ajax({
-                            url:'check_db_exists.py',
+                            url:'CheckDbExists.py',
                             type:'post',
                             data:{'db_url':db_url},
                             success:function(res){

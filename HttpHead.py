@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 import os
 import xml.dom.minidom
-import importlib
+import urllib
 
 
 
@@ -49,7 +49,6 @@ class Session(object):
             node = dom.createElement(key)
             node.appendChild(dom.createTextNode(self.data[key]))
             root.appendChild(node)
-        print(self.cook_file)
         with open(self.cook_file, 'w') as f:
             dom.writexml(f, addindent='\t', newl='\n', encoding='utf-8')
 
@@ -108,7 +107,9 @@ class HttpRequest(object):
                 if i == '':
                     continue
                 key, val = i.split('=', 1)
-                self.request_data[key] = val
+                self.request_data[key] = urllib.unquote(val)
+                # self.request_data[key] = val
+
             self.dynamicRequest(HttpRequest.RootDir + self.url)
         if self.method == 'GET':
             if self.url.find('?') != -1:  # 含有参数的get
@@ -145,15 +146,7 @@ class HttpRequest(object):
             elif extension_name in extension_set:
                 f = open(path, 'r')
                 self.response_line = ErrorCode.OK
-                # self.response_head['Content-Type'] = 'text/html'
                 self.response_head['Content-Type'] = self.checkHeader(path)
-
-                # if extension_name == '.css':
-                #     self.response_head['Content-Type'] = 'text/css'
-                # elif extension_name == '.html':
-                #     self.response_head['Content-Type'] = 'text/html'
-                # elif extension_name == '.js':
-                #     self.response_head['Content-Type'] = 'application/javascript'
 
                 self.response_body = f.read()
             elif extension_name == '.py':
@@ -196,42 +189,36 @@ class HttpRequest(object):
 
     def dynamicRequest(self, path):
 
-
         # 如果找不到或者后缀名不是py则输出404
         if not os.path.isfile(path) or os.path.splitext(path)[1] != '.py':
 
             f = open(HttpRequest.NotFoundHtml, 'r')
-            # self.response_line = ErrorCode.NOT_FOUND
             self.response_line = ErrorCode.OK
 
-            # self.response_head['Content-Type'] = 'text/html'
             self.response_head['Content-Type'] = self.checkHeader(path)
             self.response_body = f.read()
         else:
             # 获取文件名，并且将/替换成.
 
-            print('path:%s'%path)
             file_path = path.split('.', 1)[0].replace('/', '.')
-
-            # real_path = file_path.split('.',1)[1]
+            file_name = file_path.split('.', 1)[1]
 
             self.response_line = ErrorCode.OK
-            print('file_path:%s' % file_path)
 
-            m = importlib.import_module(file_path)
+            module = __import__(file_path,fromlist=[file_name])
 
-            print('module:%s' % m)
+            className = getattr(module,file_name)
 
-
-            m._SESSION = self.processSession()
+            _SESSION = self.processSession()
 
             if self.method == 'POST':
-                m._POST = self.request_data
-                m._GET = None
+                _POST = self.request_data
+                _GET = None
             else:
-                m._POST = None
-                m._GET = self.request_data
-            self.response_body = m.app()
+                _POST = None
+                _GET = self.request_data
+
+            self.response_body = className(_SESSION,_POST,_GET).app()
             self.response_head['Content-Type'] = self.checkHeader(path)
             self.response_head['Set-Cookie'] = self.Cookie
 
